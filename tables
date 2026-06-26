@@ -1,0 +1,36 @@
+from pathlib import Path
+import json
+import pandas as pd
+
+STATE = "UT"
+TOP_DIR = Path(__file__).resolve().parents[2]   # project root
+INPUT_JSON = TOP_DIR / "stats/UT_human_plan_scores.json"
+OUTPUT_DIR = TOP_DIR / "tables"
+OUTPUT_CSV = OUTPUT_DIR / "human_plan_summary.csv"
+
+# Flat metrics — copy straight to row
+FLAT_METRICS = ["PB", "EG", "MM", "PG", "county_splits", "muni_splits", "cut_edges", "always_r_count"]
+
+# Races — expand dem_wins_by_race into columns
+RACES = [      #'pres_08',
+                    'pres_12',
+                    'pres_16',
+                    'sen_16',
+                    'pres_20',
+                    'sen_18',
+                    'gov_16',
+                    'gov_20',
+                    'ag_16',
+                    'ag_20',
+                    #'treas_20', # no dem candidate in 2020
+                    'aud_20',
+                    'ag_24',
+                    'gov_24', #Lyman is NOT counted as republican
+                    'sen_24',
+                    'aud_24',
+                    'pres_24'
+                ]  # same list as collect_human_plan_data.py
+
+# Compactness — how to collapse per-district dicts
+INCLUDE_COMPACTNESS = True   # polsby_mean, reock_mean, polsby_min, etc.
+

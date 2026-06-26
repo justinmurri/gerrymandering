@@ -1,0 +1,17 @@
+.DS_Store
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.matplotlib/
+.cache/
+cache/
+
+# Large chain/recom outputs and downloads (kept locally; repo mirrors project layout)
+*.pbf
+data/**/*.jsonl
+data/**/*.parquet
+stats/**/*.jsonl
+stats/**/*.parquet
+data/unused/

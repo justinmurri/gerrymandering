@@ -1,0 +1,98 @@
+{
+    "Plantiff2": {
+        "RMD_median": 0.05774981664419041,
+        "RMD_average": 0.04715592319435646,
+        "RMD_median_culled": 0.11275563639567522,
+        "RMD_average_culled": 0.10358790288940417,
+        "RMD_median_harvard_percentile": 0.965,
+        "RMD_median_culled_harvard_percentile": 1.0
+    },
+    "UIRCPublic": {
+        "RMD_median": 0.08037496103397289,
+        "RMD_average": 0.0690233926434545,
+        "RMD_median_culled": 0.14257739327831867,
+        "RMD_average_culled": 0.13265078116198808,
+        "RMD_median_harvard_percentile": 1.0,
+        "RMD_median_culled_harvard_percentile": 1.0
+    },
+    "Plantiff1": {
+        "RMD_median": 0.11521092241023777,
+        "RMD_average": 0.10260087847863365,
+        "RMD_median_culled": 0.17705837909384106,
+        "RMD_average_culled": 0.16669726027955142,
+        "RMD_median_harvard_percentile": 1.0,
+        "RMD_median_culled_harvard_percentile": 1.0
+    },
+    "OptionA": {
+        "RMD_median": 0.043280111118769504,
+        "RMD_average": 0.05162737758798297,
+        "RMD_median_culled": 0.035347536666630125,
+        "RMD_average_culled": 0.02923669912986755,
+        "RMD_median_harvard_percentile": 0.655,
+        "RMD_median_culled_harvard_percentile": 0.9075577763897564
+    },
+    "OptionD": {
+        "RMD_median": 0.04061753262636791,
+        "RMD_average": 0.05272666955276816,
+        "RMD_median_culled": 0.03261663911025287,
+        "RMD_average_culled": 0.02653243976425067,
+        "RMD_median_harvard_percentile": 0.5535,
+        "RMD_median_culled_harvard_percentile": 0.8941286695815116
+    },
+    "OptionC": {
+        "RMD_median": 0.07386273061917856,
+        "RMD_average": 0.08491687936564656,
+        "RMD_median_culled": 0.015439638380336258,
+        "RMD_average_culled": 0.02408307374250882,
+        "RMD_median_harvard_percentile": 0.9998333333333334,
+        "RMD_median_culled_harvard_percentile": 0.6623985009369144
+    },
+    "OptionB": {
+        "RMD_median": 0.03909918061153254,
+        "RMD_average": 0.04556150935909613,
+        "RMD_median_culled": 0.0440740798068285,
+        "RMD_average_culled": 0.03710408887098084,
+        "RMD_median_harvard_percentile": 0.512,
+        "RMD_median_culled_harvard_percentile": 0.9562773266708308
+    },
+    "2021EnactedPlan": {
+        "RMD_median": 0.14639196211805658,
+        "RMD_average": 0.15527157951459353,
+        "RMD_median_culled": 0.13793152962023153,
+        "RMD_average_culled": 0.13687634753525244,
+        "RMD_median_harvard_percentile": 1.0,
+        "RMD_median_culled_harvard_percentile": 1.0
+    },
+    "Escamilla_Owens": {
+        "RMD_median": 0.10230600271854413,
+        "RMD_average": 0.09012659336029935,
+        "RMD_median_culled": 0.16491305977629014,
+        "RMD_average_culled": 0.15464488470393886,
+        "RMD_median_harvard_percentile": 1.0,
+        "RMD_median_culled_harvard_percentile": 1.0
+    },
+    "OptionE": {
+        "RMD_median": 0.07470893526119697,
+        "RMD_average": 0.08318791993100325,
+        "RMD_median_culled": 0.02702972463953116,
+        "RMD_average_culled": 0.03040023328099728,
+        "RMD_median_harvard_percentile": 0.9998333333333334,
+        "RMD_median_culled_harvard_percentile": 0.8547782635852592
+    },
+    "UIRCOrange": {
+        "RMD_median": 0.1023380625630027,
+        "RMD_average": 0.09015710808238683,
+        "RMD_median_culled": 0.16493953091636188,
+        "RMD_average_culled": 0.15466506042472783,
+        "RMD_median_harvard_percentile": 1.0,
+        "RMD_median_culled_harvard_percentile": 1.0
+    },
+    "UIRCPurple": {
+        "RMD_median": 0.06759550205498485,
+        "RMD_average": 0.054549198399578926,
+        "RMD_median_culled": 0.1275183097559134,
+        "RMD_average_culled": 0.11748808103950165,
+        "RMD_median_harvard_percentile": 0.9998333333333334,
+        "RMD_median_culled_harvard_percentile": 1.0
+    }
+}

@@ -1,0 +1,431 @@
+# Per-state pipeline configuration
+# ============================================================
+# QUICK START FOR A NEW STATE:
+#   1. Copy this file as config_<ABBREV>.yaml (e.g. config_NC.yaml)
+#   2. Edit the `state` block (abbrev, fips, n_districts, data_vintage,
+#      district_labels, and district_label_start if needed)
+#   3. All file paths below are constructed automatically from those values.
+#      You only need to edit paths/inputs if your file layout differs
+#      from the convention: <abbrev>_<kind>_<vintage>.<ext>
+#   4. Update `human_plans.plan_names` and `ensembles` for your state's data.
+#   5. Set `performance.random_seed` to a new value for your run.
+# ============================================================
+#
+# OS NOTE:
+#   `paths.venv` uses a Unix-style path (.venv/bin/activate).
+#   Windows users should change this to .venv/Scripts/activate,
+#   or override it in a local .env file / runner script.
+#
+# CONVENTIONS:
+#   - Chain row i: assignment[i] = graph node i (0-indexed)
+#   - Canonical chain: {"sample": <int>, "assignment": [<district labels>]}
+#   - Raw chain:       <step>,<json array>
+
+# ============================================================
+# STATE — edit this block for every new state
+# ============================================================
+state:
+  abbrev: UT               # Two-letter postal abbreviation (used in filenames)
+  fips: "49"               # Zero-padded FIPS code (string)
+  n_districts: 4           # Number of congressional districts
+  data_vintage: "2025"     # Year of the underlying precinct data
+  district_labels: zero_indexed
+    # Controls how district IDs are stored in chain files.
+    # Valid values:
+    #   zero_indexed  — districts labelled 0 .. (n_districts - 1)  [default]
+    #   one_indexed   — districts labelled 1 .. n_districts
+    #   custom        — labels defined explicitly in district_label_list below
+  # district_label_list: [1, 3, 5, 7]   # only used when district_labels: custom
+
+# ============================================================
+# PATHS — relative to the project root; keep these as-is unless
+# your layout differs from the convention.
+# ============================================================
+paths:
+  data_dir: data
+  stats_dir: stats
+  figures_dir: figures
+  chain_outputs_dir: chain_outputs
+  dualgraphs_dir: JSON_dualgraphs
+  # Unix: .venv/bin/activate  |  Windows: .venv/Scripts/activate
+  venv: .venv/bin/activate
+
+# ============================================================
+# INPUTS — filenames follow the pattern <abbrev>_<kind>_<vintage>.<ext>
+# Scripts should construct these from state.abbrev + state.data_vintage
+# rather than reading the literal strings here.
+# ============================================================
+inputs:
+  graph_base:         JSON_dualgraphs/{abbrev}_vtd_graph_{vintage}.json
+  graph_with_pis:     JSON_dualgraphs/{abbrev}_vtd_graph_{vintage}_w_PIs.json
+  geoparquet:         data/{abbrev}_vtds_with_election_data_{vintage}_geodataframe.parquet
+  geoparquet_with_pis: data/{abbrev}_vtds_with_election_data_{vintage}_geodataframe_w_PIs.parquet
+  road_graphs:
+    queen: JSON_dualgraphs/2020road_graph_queen_w_{vintage}_elections_data_edited.json
+    rook:  JSON_dualgraphs/2020road_graph_rook_w_{vintage}_elections_data_edited.json
+  # {abbrev}   → state.abbrev    (e.g. UT)
+  # {vintage}  → state.data_vintage (e.g. 2025)
+  # Scripts should call str.format(abbrev=..., vintage=...) on these values.
+
+# ============================================================
+# COLUMNS — map logical roles to your dataset's actual column names
+# ============================================================
+columns:
+  node_id:           path
+  population:        total_pop_20
+  pop100:            POP100
+  county:            COUNTYFP20
+  municipality:      PLACE_ID
+  party_dem_suffix:  _dem
+  party_gop_suffix:  _rep
+
+# ============================================================
+# ELECTIONS
+# ============================================================
+elections:
+  # Races to score. Add or remove entries for your state's available data.
+  races:
+    - pres_12
+    - pres_16
+    - sen_16
+    - pres_20
+    - sen_18
+    - gov_16
+    - gov_20
+    - ag_16
+    - ag_20
+    - aud_20
+    - ag_24
+    - gov_24
+    - sen_24
+    - aud_24
+    - pres_24
+
+  # Partisan Index composite columns baked into the graph.
+  # Each entry needs a name (used in output filenames) and the
+  # dem/gop column names as they appear in the graph JSON.
+  pi_types:
+    - {name: PI_weighted,   dem_col: PI_weighted_dem,   gop_col: PI_weighted_rep}
+    - {name: PI_median,     dem_col: PI_median_dem,     gop_col: PI_median_rep}
+    - {name: PI_unweighted, dem_col: PI_unweighted_dem, gop_col: PI_unweighted_rep}
+
+  # Which PI to use for each downstream step (must match a name above)
+  election_for_pb_culling:  PI_unweighted
+  election_for_symmetry:    PI_unweighted
+  election_for_rmd:         PI_unweighted
+
+symmetry_metrics: [PB, EG, MM, PG]
+
+# ============================================================
+# HUMAN PLANS — real-world maps to score and compare
+# ============================================================
+human_plans:
+  output: stats/{abbrev}_human_plan_scores.json
+  # List every plan shapefile/assignment you have for this state.
+  plan_names:
+    - 2021EnactedPlan
+    - Escamilla_Owens
+    - OptionA
+    - OptionB
+    - OptionC
+    - OptionD
+    - OptionE
+    - UIRCOrange
+    - UIRCPublic
+    - UIRCPurple
+    - Plaintiff1
+    - Plaintiff2
+
+human_rmd:
+  output: stats/{abbrev}_Human_RMD.json
+
+# ============================================================
+# ENSEMBLES — MCMC chains of randomly generated district maps
+#
+# Fields:
+#   name       — short identifier used in output filenames
+#   label      — human-readable label for plots/tables
+#   color      — palette key (see figure color definitions)
+#   chain_raw  — path to the raw JSONL chain file
+#   subsample  — number of steps to keep (null = use all steps)
+#   lrvs_join  — how to join LRVS scores; "row_index" is standard
+#
+# subsample: null means the full chain is used as-is.
+# subsample: <int> draws that many steps uniformly from the chain.
+# ============================================================
+ensembles:
+  - name:      districtPairsRA
+    label:     "District-Pairs Region-Aware 100k"
+    color:     green1
+    chain_raw: data/{abbrev}_chain_100000_district-pairs-region-aware.jsonl
+    subsample: null
+    lrvs_join: row_index
+
+  - name:      recom1M
+    label:     "{abbrev} 1M"
+    color:     green1
+    chain_raw: chain_outputs/{abbrev}_chain_1000000_steps.jsonl
+    subsample: 100000   # draw 100k steps from the full 1M
+    lrvs_join: row_index
+
+  - name:      harvard
+    label:     "ALARM 6K"
+    color:     blue1
+    chain_raw: data/{abbrev}_6000_plans_harvard.jsonl
+    subsample: null     # use all ~6000 plans
+    lrvs_join: row_index
+
+  - name:      reversible100k
+    label:     "Reversible 100k"
+    color:     bright_cerulean
+    chain_raw: data/{abbrev}_chain_100000_reversible.jsonl
+    subsample: null
+    lrvs_join: row_index
+
+  - name:      reversibleRA
+    label:     "Reversible Region-Aware 100k"
+    color:     mint
+    chain_raw: data/{abbrev}_chain_100000_reversible-region-aware.jsonl
+    subsample: null
+    lrvs_join: row_index
+
+  - name:      rw03
+    label:     "RW 0.3"
+    color:     bright_cerulean
+    chain_raw: "data/{abbrev}_chain_500000_steps_(RW := 0.3).jsonl"
+    subsample: null
+    lrvs_join: row_index
+
+  - name:      rw05
+    label:     "RW 0.5"
+    color:     green1
+    chain_raw: "data/{abbrev}_chain_500000_steps_(RW := 0.5).jsonl"
+    subsample: null
+    lrvs_join: row_index
+
+  - name:      rw08
+    label:     "RW 0.8"
+    color:     saffron_mango
+    chain_raw: "data/{abbrev}_chain_500000_steps_(RW := 0.8).jsonl"
+    subsample: null
+    lrvs_join: row_index
+
+  - name:      rw10
+    label:     "RW 1.0"
+    color:     blue1
+    chain_raw: "data/{abbrev}_chain_500000_steps_(RW := 1.0).jsonl"
+    subsample: null
+    lrvs_join: row_index
+
+# ============================================================
+# CHAIN DERIVATIVES — output filename templates
+# {name} = ensemble name, {election} = election key, {road_type} = queen|rook
+# ============================================================
+chain_derivatives:
+  canonical:          "data/{name}_canonical.jsonl"
+  winnowed_pb:        "data/{name}_winnowed_pb_{election}.jsonl"
+  winnowed_pb_roads:  "data/{name}_winnowed_pb_winnowed_roads_{road_type}.jsonl"
+
+# ============================================================
+# PREPROCESSING
+# ============================================================
+preprocessing:
+  attach_pi:
+    enabled: true    # Set true if PIs are not yet baked into the graph
+    script: pipeline_scripts/graph_and_chain_tools/attach_PI_to_graph.py
+  cull:
+    script:       pipeline_scripts/graph_and_chain_tools/cull_ensemble.py
+    bash_wrapper: pipeline_scripts/run_ensemble_culling.sh
+    graph:        JSON_dualgraphs/{abbrev}_vtd_graph_{vintage}_w_PIs.json
+    pb:           true
+    road_types:   [queen, rook]
+
+# ============================================================
+# METRICS — one entry per metric; each has its own script and outputs.
+# All path templates accept {name}, {abbrev}, {vintage}, {road_type}.
+# ============================================================
+metrics:
+  polsby:
+    script:     pipeline_scripts/metrics/process_polsby_ensemble.py
+    graph:      JSON_dualgraphs/{abbrev}_vtd_graph_{vintage}.json
+    output:     stats/{name}_polsby_scores.jsonl
+  reock:
+    script:     pipeline_scripts/metrics/process_reock_ensemble.py
+    geoparquet: data/{abbrev}_vtds_with_election_data_{vintage}_geodataframe.parquet
+    output:     stats/{name}_reock_scores.jsonl
+  symmetry:
+    script:     pipeline_scripts/metrics/process_symmetry.py
+    graph:      JSON_dualgraphs/{abbrev}_vtd_graph_{vintage}_w_PIs.json
+    output:     stats/{name}_symmetry_scores.jsonl
+  dem_wins:
+    script:     pipeline_scripts/metrics/process_total_dem_wins.py
+    geoparquet: data/{abbrev}_vtds_with_election_data_{vintage}_geodataframe.parquet
+    outputs:
+      dem_wins: stats/{name}_dem_wins.jsonl
+      always_r: stats/{name}_always_r_count.jsonl
+  splits:
+    script:  pipeline_scripts/metrics/process_split_scores.py
+    output:  stats/{name}_split_scores.jsonl
+  rmd:
+    script:  pipeline_scripts/metrics/process_RMD_MCMC.py
+    outputs:
+      lrvs:        stats/{name}_LRVS.jsonl
+      rmd_medians: stats/{name}_rmd_medians.jsonl
+  road_scores:
+    script: pipeline_scripts/metrics/process_road_scores.py
+    output: stats/{name}_road_scores_{road_type}.jsonl
+  human_plans:
+    script: pipeline_scripts/metrics/collect_human_plan_data.py
+    output: stats/{abbrev}_human_plan_scores.json
+
+# ============================================================
+# RUNNERS — convenience bash wrappers
+# ============================================================
+runners:
+  pipeline:       pipeline_scripts/run_pipeline.sh
+  preprocessing:  pipeline_scripts/run_preprocessing.sh
+  culling:          pipeline_scripts/run_ensemble_culling.sh
+  metrics:          pipeline_scripts/run_metrics.sh
+  tables:           pipeline_scripts/run_tables.sh
+  figures:          pipeline_scripts/run_figures.sh
+
+# ============================================================
+# FIGURES
+# ============================================================
+figures:
+  output_dir: figures
+  plot_groups:
+    - [harvard, harvard_winnowed_pb]
+    - [harvard, harvard_winnowed_roads_rook, harvard_winnowed_roads_queen]
+    - [recom1M, recom1M_winnowed_roads_rook, recom1M_winnowed_roads_queen]
+    - [recom1M, recom1M_winnowed_pb]
+    - [harvard, recom1M, districtPairsRA]
+  plot_group_names:
+    - harvard_pb
+    - harvard_roads
+    - recom_roads
+    - recom_pb
+    - recom_vs_harvard_districtPairsRA
+  histogram:
+    script:  pipeline_scripts/figure_makers/make_metric_histograms.py
+    metrics: [polsby, reock, symmetry, lrvs, rmd, splits]
+    overlay_group: [harvard, recom1M, districtPairsRA]
+  proportion_deviation:
+    max_deviation_pct: 12.5
+    subsample_size:    10000
+    plot_races:        [pres_20, pres_24]
+    ensembles:         [harvard, recom1M, districtPairsRA]
+  scripts:
+    compactness_scatter:  pipeline_scripts/figure_makers/make_compactness_correlation_scatterplots.py
+    proportion_deviation: pipeline_scripts/figure_makers/make_proportion_deviation_figures.py
+    dem_wins:             pipeline_scripts/figure_makers/make_dem_win_figures.py
+    metric_histograms:    pipeline_scripts/figure_makers/make_metric_histograms.py
+
+# ============================================================
+# TABLES
+# ============================================================
+tables:
+  full_summary:
+    script: pipeline_scripts/tables/make_plan_table.py
+    output: stats/{abbrev}_summary.csv
+    include_compactness: true
+    ensembles:
+      - districtPairsRA
+      - harvard
+      - recom1M
+      - harvard_winnowed_pb
+      - recom1M_winnowed_pb
+  compactness_summary:
+    script: pipeline_scripts/tables/make_compactness_summary_table.py
+    output: stats/{abbrev}_compactness_summary.csv
+    # ensembles: omit to use all entries in `ensembles:` above
+  compactness_correlation:
+    script: pipeline_scripts/tables/make_correlation_table.py
+    output_csv: figures/compactness_correlation_summary.csv
+    output_html: figures/compactness_correlation_summary.html
+    ensembles: [districtPairsRA, harvard, recom1M]
+
+# ============================================================
+# VISUALIZATIONS — interactive / one-off plan maps
+# ============================================================
+visualizations:
+  output_dir: data/visualizations
+  road_connectivity:
+    script: pipeline_scripts/visualization/visualize_road_connectivity.py
+    default_ensemble: districtPairsRA
+    default_derivative: canonical   # raw | canonical | winnowed_pb
+    default_plan_index: 0
+    basemap: roads                  # roads | tiger | carto | none
+    map_tiles_cache: data/map_tiles_cache
+    tiger_roads: data/tl_2023_{fips}_prisecroads/tl_2023_{fips}_prisecroads.shp
+    output: data/visualizations/{name}_road_connectivity_{index}.png
+  plan_dem_share:
+    script: pipeline_scripts/visualization/visualize_plan_dem_share.py
+    default_ensemble: districtPairsRA
+    default_derivative: canonical
+    default_plan_index: 0
+    rotate_degrees: 0
+    output: data/visualizations/{name}_dem_share_{index}.png
+
+# ============================================================
+# PERFORMANCE
+# ============================================================
+performance:
+  # Change random_seed for each new state or independent run.
+  # Keep a record of seeds used so results are reproducible.
+  random_seed: 52863190
+  n_jobs: -1   # -1 = use all available CPU cores; set to 1 to disable parallelism
+  subsample:
+    polsby:  100000
+    reock:   2000
+    rmd:     100000
+    scatter: 10000
+
+# ============================================================
+# PIPELINE — controls which steps actually execute.
+#
+# attach_pi / cull_pb / cull_roads:
+#   true  = run this step
+#   false = skip it
+#
+# cull_ensembles:
+#   Optional list of ensemble names to convert + cull when cull_pb or cull_roads
+#   is enabled. Omit to cull every entry in `ensembles`.
+#
+# metrics, tables, and figures are opt-in lists.
+# Only the names listed here will be computed/plotted.
+# Valid metric names:  polsby, reock, symmetry, dem_wins, splits, rmd,
+#                      road_scores, human_plans
+# Valid figure names:  compactness_scatter, proportion_deviation,
+#                      dem_wins, metric_histograms
+# Valid table names:   full_summary, compactness_summary, compactness_correlation
+#
+# Run everything:
+#   ./pipeline_scripts/run_pipeline.sh config_UT.yaml
+# Run one stage:
+#   ./pipeline_scripts/run_pipeline.sh config_UT.yaml --only metrics
+# ============================================================
+pipeline:
+  steps:
+    attach_pi: true
+    cull_pb:   true
+    cull_roads:     true
+    # cull_ensembles: [districtPairsRA, recom1M, harvard]
+    metrics:
+      - polsby
+      - reock
+      - human_plans
+      - symmetry       # uncomment to enable
+      - dem_wins
+      - splits
+      - rmd
+      - road_scores
+    figures:
+      - metric_histograms
+      - compactness_scatter
+      - proportion_deviation
+      - dem_wins
+    tables:
+      - full_summary
+      - compactness_summary
+      - compactness_correlation

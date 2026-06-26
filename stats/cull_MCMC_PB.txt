@@ -1,0 +1,6 @@
+Culling by PB=0 for PI_unweighted election...
+Results for PI_unweighted:
+Number of unique districts: 691441
+Counts by district tuple top 5 most common counts:  [336200, 115599, 19997, 11582, 5401]
+Number of plans with PB=0 per PI_unweighted: 205101
+
